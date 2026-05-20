@@ -1,0 +1,5 @@
+.env
+.telagent/.env
+scripts/tmp/
+*.log
+README-internal.md

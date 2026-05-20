@@ -1,0 +1,16 @@
+{
+  "name": "telagent",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "telagent": "./bin/telagent.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup": "node bin/telagent.mjs setup",
+    "doctor": "node bin/telagent.mjs doctor",
+    "test": "node bin/telagent.mjs test"
+  }
+}
