@@ -8,6 +8,7 @@ export const files = {
   sentRegistry: path.join(RUNTIME_DIR, 'sent-registry.jsonl'),
   cache: path.join(RUNTIME_DIR, 'updates-cache.jsonl'),
   globalOffset: path.join(RUNTIME_DIR, 'global-offset.txt'),
+  inboxRegistry: path.join(RUNTIME_DIR, 'inbox-registry.jsonl'),
   pollLock: path.join(RUNTIME_DIR, 'poll.lock'),
   registry: path.join(RUNTIME_DIR, 'listener-registry.jsonl'),
   registryLock: path.join(RUNTIME_DIR, 'registry.lock'),
@@ -48,6 +49,10 @@ export function filterKey(ids) {
 
 export function promptFileFor(ids) {
   return path.join(RUNTIME_DIR, `prompt-${filterKey(ids)}.json`);
+}
+
+export function inboxPromptFileFor(chatId, messageId) {
+  return path.join(RUNTIME_DIR, `prompt-inbox-${chatId}-${messageId}.json`);
 }
 
 export function defaultOffsetFile(ids) {
@@ -187,4 +192,65 @@ export function writePrompt(updates, ids) {
   const file = promptFileFor(ids);
   atomicWriteFile(file, JSON.stringify(data, null, 2));
   return file;
+}
+
+export function writeInboxPrompt(update) {
+  const msg = update.message;
+  const data = {
+    text: msg.text,
+    messageId: msg.message_id,
+    chatId: String(msg.chat.id),
+    fromUserId: String(msg.from?.id ?? msg.chat.id),
+    replyToMessageId: msg.reply_to_message?.message_id ?? null,
+    timestamp: msg.date,
+    source: 'telegram-inbox',
+  };
+  const file = inboxPromptFileFor(msg.chat.id, msg.message_id);
+  atomicWriteFile(file, JSON.stringify(data, null, 2));
+  appendJsonLineAtomic(files.inboxRegistry, {
+    messageId: msg.message_id,
+    chatId: String(msg.chat.id),
+    promptFile: file,
+    timestamp: msg.date,
+  });
+  return file;
+}
+
+export async function fetchInbox(config) {
+  ensureRuntime();
+  if (!acquireLock(files.pollLock)) return [];
+  const inboxUpdates = [];
+  try {
+    const offset = readOffset(files.globalOffset);
+    const updates = await getUpdates(config.token, offset);
+    if (!updates.length) return [];
+
+    const cache = [...readJsonLines(files.cache), ...updates].slice(-500);
+    writeJsonLines(files.cache, cache);
+
+    for (const update of updates) {
+      const msg = update.message;
+      if (!isAdminMessage(update, config.adminChatIds)) continue;
+      if (String(msg.text).trim().startsWith('/')) continue;
+      inboxUpdates.push(update);
+    }
+
+    appendJsonLineAtomic(files.audit, {
+      timestamp: Math.floor(Date.now() / 1000),
+      fetched: updates.length,
+      cached: updates.length,
+      inbox: inboxUpdates.length,
+    });
+    writeOffset(files.globalOffset, Math.max(...updates.map((u) => u.update_id)));
+  } finally {
+    releaseLock(files.pollLock);
+  }
+
+  const promptFiles = [];
+  for (const update of inboxUpdates) {
+    const msg = update.message;
+    promptFiles.push(writeInboxPrompt(update));
+    try { await react(config.token, msg.chat.id, msg.message_id, '👍'); } catch {}
+  }
+  return promptFiles;
 }

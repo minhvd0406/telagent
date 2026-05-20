@@ -33,12 +33,14 @@ export async function setup(argv = []) {
     const flagToken = flags.token ? String(flags.token).trim() : '';
     const flagChats = flags['chat-id'] || flags['chat-ids'] ? String(flags['chat-id'] || flags['chat-ids']).trim() : '';
     const flagInstall = flags.install ? String(flags.install).trim() : '';
+    const flagLanguage = flags.language || flags.lang ? String(flags.language || flags.lang).trim() : '';
 
     const tokenPrompt = currentToken ? `Telegram bot token [${maskToken(currentToken)}]: ` : 'Telegram bot token: ';
     const token = flagToken || (await question(tokenPrompt)).trim() || currentToken;
     const chatPrompt = currentChats ? `Admin chat ID [${currentChats}]: ` : 'Admin chat ID: ';
     const chatIds = flagChats || (await question(chatPrompt)).trim() || currentChats;
     const installChoice = normalizeInstallChoice(flagInstall || await question('Install agent rules? [all/claude/codex/gemini/cursor/skip]: ') || 'all');
+    const language = flagLanguage || (installChoice === 'skip' ? 'auto' : (await question('Telegram report language? [auto/vi/en]: ') || 'auto').trim());
     const sendTest = (flags.test || flags.yes || flags.y || flags['no-test'] || flags.n)
       ? boolFromFlags(flags)
       : String(await question('Send test message? [Y/n]: ') || 'Y').trim().toLowerCase() !== 'n';
@@ -63,12 +65,12 @@ export async function setup(argv = []) {
 
     if (installChoice !== 'skip') {
       if (installChoice === 'cursor') {
-        console.log(cursorInstruction());
+        console.log(cursorInstruction({ language }));
       } else {
         const names = installChoice === 'all' ? ['claude', 'codex', 'gemini'] : [installChoice];
         const targets = flags.project || flags.local ? projectTargets : globalTargets;
         for (const name of names) {
-          installRuleBlock(targets[name]);
+          installRuleBlock(targets[name], { language });
           console.log(`Installed ${name} rules: ${targets[name]}`);
         }
       }

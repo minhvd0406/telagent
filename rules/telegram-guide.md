@@ -27,6 +27,30 @@ telagent send "<short report>" --wait-reply
 
 Telagent prints the prompt JSON path when a valid reply arrives.
 
+## Telegram Inbox
+
+Use inbox when the user wants to send instructions from Telegram without replying to a specific agent message:
+
+```bash
+telagent inbox
+```
+
+If a message is available, Telagent prints a prompt JSON path. Read that JSON and follow its `text` as the latest user instruction.
+
+For a long-running terminal watcher:
+
+```bash
+telagent inbox --watch
+```
+
+To have Telegram messages launch Codex work automatically in a project:
+
+```bash
+telagent codex --watch --cd /path/to/project
+```
+
+This runs `codex exec` for each Telegram inbox message. The agent output appears in the terminal running the watcher.
+
 ## Read Prompt JSON
 
 Prompt files are written under the Telagent runtime directory, usually:
@@ -77,8 +101,8 @@ telagent send --file ./report.md "Report attached"
 
 ## Orphans
 
-The user must use Telegram Reply on a specific agent message. Plain Telegram messages are orphans. Telagent reacts 💔 and sends a `[SYSTEM]` hint. Orphans are not passed to the agent.
+Without `telagent inbox`, the user must use Telegram Reply on a specific agent message while `send --wait-reply` or `listen` is running. With `telagent inbox`, plain admin messages are accepted as inbox prompts.
 
 ## Local Reality
 
-Telegram cannot answer local permission prompts. The machine must stay awake while waiting for replies.
+Telegram cannot answer local permission prompts. The machine must stay awake while waiting for replies. Telagent writes Telegram text to prompt JSON; an agent process must read that JSON before it can act on the instruction.

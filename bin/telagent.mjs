@@ -7,6 +7,8 @@ import { listen } from '../src/cli/listen.mjs';
 import { initProject } from '../src/cli/init-project.mjs';
 import { cleanup } from '../src/cli/cleanup.mjs';
 import { guide } from '../src/cli/guide.mjs';
+import { inbox } from '../src/cli/inbox.mjs';
+import { codex } from '../src/cli/codex.mjs';
 import { scrubSecrets } from '../src/config.mjs';
 
 const commands = {
@@ -19,6 +21,8 @@ const commands = {
   'init-project': initProject,
   cleanup,
   guide,
+  inbox,
+  codex,
 };
 
 function usage() {
@@ -26,13 +30,15 @@ function usage() {
 
 Usage:
   telagent setup
-  telagent init [--all|--claude|--codex|--gemini]
+  telagent init [--all|--claude|--codex|--gemini] [--lang auto|vi|en]
   telagent doctor
   telagent test
   telagent guide
+  telagent inbox [--watch]
+  telagent codex [--watch] [--cd <project>] [--resume-last] [--prompt <file>]
   telagent send "message" [--wait-reply]
   telagent listen --reply-to <messageId[,messageId...]>
-  telagent init-project [--all|--claude|--codex|--gemini]
+  telagent init-project [--all|--claude|--codex|--gemini] [--lang auto|vi|en]
   telagent cleanup [--older-than 7d] [--dry-run]
 `);
 }

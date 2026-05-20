@@ -8,8 +8,9 @@ import { getMe, sendTextSmart } from '../telegram.mjs';
 export async function initProject(argv) {
   const { flags } = parseFlags(argv);
   const targets = selectTargets(flags.all ? 'all' : null, flags);
+  const language = flags.language || flags.lang || 'auto';
   for (const name of targets) {
-    installRuleBlock(projectTargets[name]);
+    installRuleBlock(projectTargets[name], { language });
     console.log(`Installed ${name} project rules: ${projectTargets[name]}`);
   }
   if (flags.token || flags['chat-id'] || flags['chat-ids']) {

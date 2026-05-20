@@ -49,7 +49,7 @@ Go to any project:
 
 ```bash
 cd ~/Projects/my-app
-telagent init --all
+telagent init --all --lang vi
 ```
 
 That installs local agent rule files:
@@ -61,6 +61,16 @@ GEMINI.md
 ```
 
 The rules tell agents to use the global `telagent` command.
+
+Language choices for Telegram reports:
+
+```bash
+telagent init --all --lang auto  # match the current conversation
+telagent init --all --lang vi    # Vietnamese
+telagent init --all --lang en    # English
+```
+
+Generated agent rules ask agents to send natural, familiar summaries such as "mình đã làm..." when work is done and "mình cần bạn..." when the user needs to decide or unblock something.
 
 ## Project-specific Telegram Config
 
@@ -100,6 +110,7 @@ Tele me when finished.
 Commands agents use:
 
 ```bash
+telagent inbox
 telagent send "Task finished"
 telagent send "Need your decision" --wait-reply
 telagent send --file ./report.md "Report attached"
@@ -111,10 +122,13 @@ telagent listen --reply-to 5821
 ```bash
 telagent setup
 telagent setup --project
-telagent init --all
+telagent init --all --lang vi
 telagent doctor
 telagent test
 telagent guide
+telagent inbox
+telagent inbox --watch
+telagent codex --watch --cd ~/Projects/my-app
 telagent send "message"
 telagent send "message" --wait-reply
 telagent send --reply-to 5821 "Got it"
@@ -148,9 +162,11 @@ telagent test
 
 ## Limits
 
-- Telegram replies must use Reply on the agent message.
+- Telegram replies must use Reply on the agent message when using `send --wait-reply`.
+- For free-form Telegram instructions, run `telagent inbox` or `telagent inbox --watch`.
+- To let Telegram messages launch local Codex work, keep `telagent codex --watch --cd <project>` running in a terminal.
 - The machine must stay awake.
 - Telegram cannot answer local agent permission prompts.
-- Telagent writes Telegram text to prompt JSON; it does not execute it.
+- Telagent writes Telegram text to prompt JSON. `telagent codex --watch` can pass those prompts to `codex exec`; otherwise an agent process must read them before it can act.
 - Telagent is not a full remote terminal.
 # telagent
